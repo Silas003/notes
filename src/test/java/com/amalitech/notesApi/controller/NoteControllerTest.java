@@ -4,6 +4,7 @@ package com.amalitech.notesApi.controller;
 import com.amalitech.notesApi.models.Note;
 import com.amalitech.notesApi.service.NoteService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +31,14 @@ class NoteControllerTest {
     @MockitoBean
     private NoteService noteService;
 
+    private Note note1;
+    private Note note2;
+
+    @BeforeEach
+    void setup() {
+            note1 = new Note(1L, "First Note", "Content of first note");
+          note2 = new Note(2L, "Second Note", "Content of second note");
+    }
 
 
     @Test
@@ -78,5 +88,24 @@ class NoteControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
     }
+
+    @Test
+    void testGetNoteById() throws Exception {
+        Mockito.when(noteService.getNoteById(1L)).thenReturn(note1);
+
+        mockMvc.perform(get("/api/v1/notes/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title").value("First Note"))
+                .andExpect(jsonPath("$.content").value("Content of first note"));
+    }
+
+    @Test
+    void testGetNoteById_NotFound() throws Exception {
+        Mockito.when(noteService.getNoteById(99L)).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/notes/99"))
+                .andExpect(status().isNotFound());
+    }
+
 }
 

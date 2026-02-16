@@ -36,12 +36,20 @@ public class NoteController {
     }
 
     @GetMapping
-    public List<Note> getNotes() {
-        return noteService.getAllNotes();
+    public ResponseEntity<List<Note>> getNotes() {
+        List<Note> notes = noteService.getAllNotes();
+        if (notes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(notes);
     }
 
     @GetMapping("/{id}")
-    public Note getNote(@PathVariable Long id) {
-        return noteService.getNoteById(id);
+    public ResponseEntity<Note> getNote(@PathVariable Long id) {
+        Note note = noteService.getNoteById(id);
+        if (note == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(note);
     }
 }
