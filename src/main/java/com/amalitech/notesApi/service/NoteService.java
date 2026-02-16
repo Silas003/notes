@@ -3,6 +3,7 @@ package com.amalitech.notesApi.service;
 import com.amalitech.notesApi.dto.request.NoteRequest;
 import com.amalitech.notesApi.exceptions.InvalidNoteException;
 import com.amalitech.notesApi.exceptions.NoteCreationException;
+import com.amalitech.notesApi.exceptions.NoteNotFoundException;
 import com.amalitech.notesApi.models.Note;
 import com.amalitech.notesApi.repository.NoteRepository;
 import com.amalitech.notesApi.service.interfaces.NoteServiceInterface;
@@ -45,4 +46,30 @@ public class NoteService implements NoteServiceInterface {
         return noteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Note not found"));
     }
+
+    @Override
+    public Note updateNote(Long id, NoteRequest request) {
+            if (request.title() == null || request.title().isBlank()) {
+                throw new InvalidNoteException("Title cannot be empty");
+            }
+            if (request.content() == null || request.content().isBlank()) {
+                throw new InvalidNoteException("Content cannot be empty");
+            }
+
+            Note existingNote = noteRepository.findById(id)
+                    .orElseThrow(() -> new NoteNotFoundException("Note with id " + id + " not found"));
+
+            existingNote.setTitle(request.title());
+            existingNote.setContent(request.content());
+
+            return noteRepository.save(existingNote);
+        }
+
+    @Override
+    public void deleteNote(Long id) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new NoteNotFoundException("Note with id " + id + " not found"));
+        noteRepository.delete(note);
+    }
+
 }
