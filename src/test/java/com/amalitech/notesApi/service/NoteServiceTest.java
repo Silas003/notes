@@ -146,4 +146,29 @@ class NoteServiceTest {
 
         assertThrows(InvalidNoteException.class, () -> noteService.updateNote(1L, updateRequest));
     }
+
+    @Test
+    void shouldDeleteNoteSuccessfully() {
+        Note note = new Note();
+        note.setId(1L);
+
+        when(noteRepository.findById(1L)).thenReturn(Optional.of(note));
+        doNothing().when(noteRepository).delete(note);
+
+        noteService.deleteNote(1L);
+
+        verify(noteRepository, times(1)).delete(note);
+    }
+
+    @Test
+    void shouldThrowNoteNotFoundExceptionWhenNoteDoesNotExist() {
+        when(noteRepository.findById(999L)).thenReturn(Optional.empty());
+
+        NoteNotFoundException exception = assertThrows(NoteNotFoundException.class, () -> {
+            noteService.deleteNote(999L);
+        });
+
+        assert(exception.getMessage().equals("Note with id 999 not found"));
+        verify(noteRepository, never()).delete(any());
+    }
 }

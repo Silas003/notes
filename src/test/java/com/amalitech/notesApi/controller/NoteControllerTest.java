@@ -162,5 +162,24 @@ class NoteControllerTest {
                 .andExpect(jsonPath("$.title").value("Updated Title"))
                 .andExpect(jsonPath("$.content").value("Updated Content"));
     }
+
+    @Test
+    void shouldDeleteNoteSuccessfully() throws Exception {
+        Mockito.doNothing().when(noteService).deleteNote(1L);
+
+        mockMvc.perform(delete("/api/v1/notes/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Note with id 1 deleted successfully"));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingNonExistentNote() throws Exception {
+        Mockito.doThrow(new NoteNotFoundException("Note with id 999 not found"))
+                .when(noteService).deleteNote(999L);
+
+        mockMvc.perform(delete("/api/v1/notes/999"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.details").value("Note with id 999 not found"));
+    }
 }
 
