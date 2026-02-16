@@ -5,12 +5,15 @@ import com.amalitech.notesApi.dto.response.UserResponse;
 import com.amalitech.notesApi.models.User;
 import com.amalitech.notesApi.repository.UserRepository;
 import com.amalitech.notesApi.security.JwtUtil;
+import com.amalitech.notesApi.security.PasswordUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -149,5 +152,85 @@ public class UserServiceTest {
         assertNotNull(second);
 
         verify(userRepository, times(2)).findById(1L);
+    }
+
+    @Test
+    void updateUser_success() {
+        // Arrange
+        Long userId = 1L;
+        AuthRequest updateRequest = new AuthRequest("newemail@example.com", "newPassword");
+
+        User existingUser = new User();
+        existingUser.setId(userId);
+        existingUser.setEmail("oldemail@example.com");
+        existingUser.setPassword("oldPassword");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        UserResponse response = userService.updateUser(userId, updateRequest);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals("newemail@example.com", response.email());
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, times(1)).save(existingUser);
+    }
+
+    @Test
+    void updateUser_userNotFound_throwsException() {
+        // Arrange
+        Long userId = 99L;
+        AuthRequest updateRequest = new AuthRequest("newemail@example.com", "newPassword");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
+                () -> userService.updateUser(userId, updateRequest));
+
+        assertEquals("User not found", ex.getMessage());
+
+        verify(userRepository, times(1)).findById(userId);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void loadUserByUsername_userExists_returnsUserDetails() {
+        // Arrange
+        String email = "test@example.com";
+        String password = "hashedPassword";
+
+        User mockUser = new User();
+        mockUser.setEmail(email);
+        mockUser.setPassword(password);
+
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(mockUser));
+
+        // Act
+        UserDetails userDetails = userService.loadUserByUsername(email);
+
+        // Assert
+        assertNotNull(userDetails);
+        assertEquals(email, userDetails.getUsername());
+        assertEquals(password, userDetails.getPassword());
+        assertTrue(userDetails.getAuthorities().isEmpty());
+
+        verify(userRepository, times(1)).findByEmail(email);
+    }
+
+    @Test
+    void loadUserByUsername_userDoesNotExist_throwsException() {
+        // Arrange
+        String email = "nonexistent@example.com";
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        UsernameNotFoundException ex = assertThrows(UsernameNotFoundException.class,
+                () -> userService.loadUserByUsername(email));
+
+        assertEquals("User not found with email: " + email, ex.getMessage());
+        verify(userRepository, times(1)).findByEmail(email);
     }
 }
