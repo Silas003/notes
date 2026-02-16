@@ -4,13 +4,13 @@ import com.amalitech.notesApi.dto.request.AuthRequest;
 import com.amalitech.notesApi.dto.response.AuthResponse;
 import com.amalitech.notesApi.dto.response.UserResponse;
 import com.amalitech.notesApi.exceptions.UserExists;
-import com.amalitech.notesApi.mapper.UserMapper;
 import com.amalitech.notesApi.models.User;
 import com.amalitech.notesApi.repository.UserRepository;
 import com.amalitech.notesApi.security.JwtUtil;
 import com.amalitech.notesApi.security.PasswordUtils;
 import com.amalitech.notesApi.service.interfaces.UserServiceInterface;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,10 +21,11 @@ import java.util.Collection;
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class UserService implements UserServiceInterface , UserDetailsService {
     private UserRepository userRepository;
     private JwtUtil jwtUtil;
-    private UserMapper userMapper;
+
     @Override
     public void createUser(AuthRequest userRequest) {
         if (userRepository.existsByEmail(userRequest.email())) {
