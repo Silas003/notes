@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @AllArgsConstructor
-@RestController("api/v1/notes")
+@RestController
+@RequestMapping("api/v1/notes")
 public class NoteController {
     private final NoteService noteService;
 
