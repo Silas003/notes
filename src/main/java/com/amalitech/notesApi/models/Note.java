@@ -1,7 +1,6 @@
 package com.amalitech.notesApi.models;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,6 +31,12 @@ public class Note {
 
     public Note() {
 
+    }
+
+    public Note(long id, String firstNote, String contentOfFirstNote) {
+        this.id = id;
+        this.title = firstNote;
+        this.content = contentOfFirstNote;
     }
 
     @PrePersist
