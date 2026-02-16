@@ -3,6 +3,7 @@ package com.amalitech.notesApi.service;
 import com.amalitech.notesApi.dto.request.NoteRequest;
 import com.amalitech.notesApi.exceptions.InvalidNoteException;
 import com.amalitech.notesApi.exceptions.NoteCreationException;
+import com.amalitech.notesApi.exceptions.NoteNotFoundException;
 import com.amalitech.notesApi.models.Note;
 import com.amalitech.notesApi.repository.NoteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -100,5 +102,48 @@ class NoteServiceTest {
         List<Note> notes = noteService.getAllNotes();
         assertThat(notes).hasSize(1);
         assertThat(notes.get(0).getTitle()).isEqualTo("Note 1");
+    }
+
+    @Test
+    void shouldUpdateNoteSuccessfully() {
+        Note existing = new Note();
+        existing.setId(1L);
+        existing.setTitle("Old Title");
+        existing.setContent("Old Content");
+
+        NoteRequest updateRequest = new NoteRequest("New Title", "New Content");
+
+        when(noteRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(noteRepository.save(existing)).thenReturn(existing);
+
+        Note updated = noteService.updateNote(1L, updateRequest);
+
+        assertThat(updated.getTitle()).isEqualTo("New Title");
+        assertThat(updated.getContent()).isEqualTo("New Content");
+
+        ArgumentCaptor<Note> captor = ArgumentCaptor.forClass(Note.class);
+        verify(noteRepository).save(captor.capture());
+        assertThat(captor.getValue().getTitle()).isEqualTo("New Title");
+    }
+
+    @Test
+    void shouldThrowNoteNotFoundExceptionWhenIdDoesNotExist() {
+        NoteRequest updateRequest = new NoteRequest("New Title", "New Content");
+
+        when(noteRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(NoteNotFoundException.class, () -> noteService.updateNote(1L, updateRequest));
+    }
+    @Test
+    void shouldThrowInvalidNoteExceptionWhenTitleEmpty() {
+        NoteRequest updateRequest = new NoteRequest("", "Content");
+        assertThrows(InvalidNoteException.class, () -> noteService.updateNote(1L, updateRequest));
+    }
+
+    @Test
+    void shouldThrowInvalidNoteExceptionWhenContentEmpty() {
+        NoteRequest updateRequest = new NoteRequest("Title", "");
+
+        assertThrows(InvalidNoteException.class, () -> noteService.updateNote(1L, updateRequest));
     }
 }
