@@ -52,4 +52,22 @@ public class NoteController {
         }
         return ResponseEntity.ok(note);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<NoteResponse> updateNote(
+            @PathVariable Long id,
+            @Valid @RequestBody NoteRequest request) {
+
+        Note updated = noteService.updateNote(id, request);
+
+        NoteResponse response = new NoteResponse(
+                updated.getId(),
+                updated.getTitle(),
+                updated.getContent(),
+                updated.getCreatedAt(),
+                updated.getUpdatedAt()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }
