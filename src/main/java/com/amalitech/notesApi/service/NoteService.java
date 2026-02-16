@@ -65,4 +65,11 @@ public class NoteService implements NoteServiceInterface {
             return noteRepository.save(existingNote);
         }
 
+    @Override
+    public void deleteNote(Long id) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new NoteNotFoundException("Note with id " + id + " not found"));
+        noteRepository.delete(note);
+    }
+
 }
