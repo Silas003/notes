@@ -1,21 +1,22 @@
 package com.amalitech.notesApi.controller;
 
-
 import com.amalitech.notesApi.dto.request.NoteRequest;
-import com.amalitech.notesApi.exceptions.InvalidNoteException;
+import com.amalitech.notesApi.exceptions.GlobalExceptionHandler;
 import com.amalitech.notesApi.exceptions.NoteNotFoundException;
 import com.amalitech.notesApi.models.Note;
+import com.amalitech.notesApi.models.User;
 import com.amalitech.notesApi.service.NoteService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.context.annotation.Import;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 
@@ -25,30 +26,28 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(NoteController.class)
-@Import(com.fasterxml.jackson.databind.ObjectMapper.class)
+@ExtendWith(MockitoExtension.class)
 class NoteControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockitoBean
+    @Mock
     private NoteService noteService;
 
+    @InjectMocks
+    private NoteController noteController;
+
+    private ObjectMapper objectMapper;
     private Note note1;
-    private Note note2;
-
-
 
     @BeforeEach
     void setup() {
-            note1 = new Note(1L, "First Note", "Content of first note");
-          note2 = new Note(2L, "Second Note", "Content of second note");
+        mockMvc = MockMvcBuilders.standaloneSetup(noteController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+        objectMapper = new ObjectMapper();
+        note1 = new Note(1L, "First Note", "Content of first note");
     }
-
 
     @Test
     void shouldReturnHealthStatus() throws Exception {
@@ -60,10 +59,11 @@ class NoteControllerTest {
     @Test
     void shouldCreateNote() throws Exception {
         Note note = new Note();
+        User user = new User();
         note.setId(1L);
         note.setTitle("Test");
         note.setContent("Test content");
-        note.setUserId(1L);
+        note.setUser(user);
 
         Mockito.when(noteService.createNote(any()))
                 .thenReturn(note);
@@ -85,10 +85,11 @@ class NoteControllerTest {
     @Test
     void shouldGetAllNotes() throws Exception {
         Note note = new Note();
+        User user = new User();
         note.setId(1L);
         note.setTitle("Test");
         note.setContent("Content");
-        note.setUserId(1L);
+        note.setUser(user);
 
         Mockito.when(noteService.getAllNotes())
                 .thenReturn(List.of(note));
@@ -99,7 +100,7 @@ class NoteControllerTest {
     }
 
     @Test
-    void testGetNoteById() throws Exception {
+    void shouldGetNoteById() throws Exception {
         Mockito.when(noteService.getNoteById(1L)).thenReturn(note1);
 
         mockMvc.perform(get("/api/v1/notes/1"))
@@ -109,16 +110,18 @@ class NoteControllerTest {
     }
 
     @Test
-    void testGetNoteById_NotFound() throws Exception {
-        Mockito.when(noteService.getNoteById(99L)).thenReturn(null);
+    void shouldReturnNotFoundWhenNoteDoesNotExist() throws Exception {
+        Mockito.when(noteService.getNoteById(99L))
+                .thenThrow(new NoteNotFoundException("Note with id 99 not found"));
 
         mockMvc.perform(get("/api/v1/notes/99"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.details").value("Note with id 99 not found"));
     }
-    @Test
-    void shouldReturnNotFoundWhenNoteDoesNotExist() throws Exception {
-        NoteRequest request = new NoteRequest("Title", "Content");
 
+    @Test
+    void shouldReturnNotFoundWhenUpdatingNonExistentNote() throws Exception {
+        NoteRequest request = new NoteRequest("Title", "Content");
 
         Mockito.when(noteService.updateNote(eq(999L), any(NoteRequest.class)))
                 .thenThrow(new NoteNotFoundException("Note with id 999 not found"));
@@ -133,9 +136,6 @@ class NoteControllerTest {
     @Test
     void shouldReturnBadRequestWhenTitleEmpty() throws Exception {
         NoteRequest request = new NoteRequest("", "Content");
-
-        Mockito.when(noteService.updateNote(eq(1L), any(NoteRequest.class)))
-                .thenThrow(new InvalidNoteException("Title cannot be empty"));
 
         mockMvc.perform(put("/api/v1/notes/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -182,4 +182,3 @@ class NoteControllerTest {
                 .andExpect(jsonPath("$.details").value("Note with id 999 not found"));
     }
 }
-
