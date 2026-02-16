@@ -1,11 +1,16 @@
 package com.amalitech.notesApi.models;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
+@AllArgsConstructor
+@Getter
+@Setter
 @Table(name = "notes")
 public class Note {
 
@@ -24,6 +29,10 @@ public class Note {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public Note() {
+
+    }
 
     @PrePersist
     protected void onCreate() {
