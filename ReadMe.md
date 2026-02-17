@@ -366,10 +366,4 @@ User with id 1 deleted successfully
 - Passwords hashed before storing
 - All endpoints (except health check, register, login) require JWT token in Authorization header
 
-```
-```
-
-I can now provide this as a **downloadable Markdown file** ready to save as `README.md`.  
-
-Do you want me to generate the **actual downloadable file link** for you?
 
