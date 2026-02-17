@@ -1,0 +1,80 @@
+package com.amalitech.notesApi.controller;
+
+import com.amalitech.notesApi.dto.request.NoteRequest;
+import com.amalitech.notesApi.dto.response.NoteResponse;
+import com.amalitech.notesApi.models.Note;
+import com.amalitech.notesApi.service.NoteService;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@AllArgsConstructor
+@RestController
+@RequestMapping("api/v1/notes")
+public class NoteController {
+    private final NoteService noteService;
+
+    @GetMapping("/health")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Notes API is running");
+    }
+
+    @PostMapping
+    public ResponseEntity<NoteResponse> createNote(
+            @Valid @RequestBody NoteRequest request) {
+
+        Note note = noteService.createNote(request);
+
+        NoteResponse response = new NoteResponse(note.getId(), note.getTitle(), note.getContent(), note.getCreatedAt(), note.getUpdatedAt());
+
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Note>> getNotes() {
+        List<Note> notes = noteService.getAllNotes();
+        if (notes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(notes);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Note> getNote(@PathVariable Long id) {
+        Note note = noteService.getNoteById(id);
+        if (note == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(note);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<NoteResponse> updateNote(
+            @PathVariable Long id,
+            @Valid @RequestBody NoteRequest request) {
+
+        Note updated = noteService.updateNote(id, request);
+
+        NoteResponse response = new NoteResponse(
+                updated.getId(),
+                updated.getTitle(),
+                updated.getContent(),
+                updated.getCreatedAt(),
+                updated.getUpdatedAt()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteNote(@PathVariable Long id) {
+        noteService.deleteNote(id);
+        return ResponseEntity.ok("Note with id " + id + " deleted successfully");
+    }
+
+}
